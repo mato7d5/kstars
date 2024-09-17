@@ -10,6 +10,8 @@
 #include "skyobjects/ksmoon.h"
 #include "kstarsdatetime.h"
 
+#include <utility>
+
 /**
  *@class KSAlmanac
  *
@@ -22,6 +24,12 @@
  */
 
 class GeoLocation;
+
+enum class Twilight : std::uint8_t {
+    Astronomical,
+    Nautical,
+    Civil
+};
 
 class KSAlmanac
 {
@@ -68,6 +76,8 @@ class KSAlmanac
     inline double getMoonSet() const { return MoonSet; }
     inline double getDuskAstronomicalTwilight() const { return DuskAstronomicalTwilight; }
     inline double getDawnAstronomicalTwilight() const { return DawnAstronomicalTwilight; }
+    double getDuskTwilight(Twilight twilight) const;
+    double getDawnTwilight(Twilight twilight) const;
 
     /**
          *These functions return the max and min altitude of the sun during the course of the day in degrees
@@ -112,9 +122,17 @@ class KSAlmanac
          * - If the day midnight of this KSAlmanac is during astronomical night time, dusk will be before dawn.
          * - If the day midnight of this KSAlmanac is during twilight or day time, dawn will be before dusk.
          * - If there is no astronomical night time, dawn and dusk will be set to the time of minimal altitude of the Sun.
-         * - If there is no twilight or day time, dawn and dusk will be set to the time of minimal altitude of the Sun.
+         * - If there is no twilight or day time, dawn and dusk will be set to the time of minimal altitude of the Sun. 
+         * @return Computed dusk and dawn for given altitude.        
          */
-    void findDawnDusk(double altitude = -18.0);
+    std::pair<double, double> findDawnDusk(double altitude);
+
+    /**
+     * Compute the dawn and dusk times for defined twilight.
+     * Calls findDawnDusk(double).
+     * @see findDawnDusk(double)
+     */
+    std::pair<double, double> findDawnDusk(Twilight twilight);
 
     /**
          * Computes the moon phase at the given date/time
@@ -139,8 +157,16 @@ class KSAlmanac
     double MoonSet { 0 };
     double DuskAstronomicalTwilight { 0 };
     double DawnAstronomicalTwilight { 0 };
+    double DuskNauticalTwilight { 0 };
+    double DawnNauticalTwilight { 0 };
+    double DuskCivilTwilight { 0 };
+    double DawnCivilTwilight { 0 };
     double SunMinAlt { 0 };
     double SunMaxAlt { 0 };
     double MoonPhase { 0 };
-    QTime SunRiseT, SunSetT, MoonRiseT, MoonSetT, DuskAstronomicalTwilightT, DawnAstronomicalTwilightT;
+    QTime SunRiseT, SunSetT;
+    QTime MoonRiseT, MoonSetT;
+    QTime DuskAstronomicalTwilightT, DawnAstronomicalTwilightT;
+    QTime DuskNauticalTwilightT, DawnNauticalTwilightT;
+    QTime DuskCivilTwilightT, DawnCivilTwilightT;
 };

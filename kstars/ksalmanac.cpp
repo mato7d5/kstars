@@ -44,7 +44,19 @@ void KSAlmanac::update()
     RiseSetTime(&m_Sun, &SunRise, &SunSet, &SunRiseT, &SunSetT);
     RiseSetTime(&m_Moon, &MoonRise, &MoonSet, &MoonRiseT, &MoonSetT);
     //    qDebug() << Q_FUNC_INFO << "Sun rise: " << SunRiseT.toString() << " Sun set: " << SunSetT.toString() << " Moon rise: " << MoonRiseT.toString() << " Moon set: " << MoonSetT.toString();
-    findDawnDusk();
+    
+    auto dawnAndDusk = findDawnDusk(Twilight::Civil);
+    DawnCivilTwilight = dawnAndDusk.first;
+    DuskCivilTwilight = dawnAndDusk.second;
+
+    dawnAndDusk = findDawnDusk(Twilight::Nautical);
+    DawnNauticalTwilight = dawnAndDusk.first;
+    DuskNauticalTwilight = dawnAndDusk.second;
+
+    dawnAndDusk = findDawnDusk(Twilight::Astronomical);
+    DawnAstronomicalTwilight = dawnAndDusk.first;
+    DuskAstronomicalTwilight = dawnAndDusk.second;
+
     findMoonPhase();
 }
 
@@ -85,11 +97,14 @@ void KSAlmanac::RiseSetTime(SkyObject *o, double *riseTime, double *setTime, QTi
     }
 }
 
-void KSAlmanac::findDawnDusk(double altitude)
+std::pair<double, double> KSAlmanac::findDawnDusk(double altitude)
 {
     KStarsDateTime today = dt;
     KSNumbers num(today.djd());
     CachingDms LST = geo->GSTtoLST(today.gst());
+
+    double computedDusk{};
+    double computedDawn{};
 
     // Relocate our local Sun to this almanac time - local midnight
     m_Sun.updateCoords(&num, true, geo->lat(), &LST, true);
@@ -143,18 +158,33 @@ void KSAlmanac::findDawnDusk(double altitude)
     // If the Sun did not cross the astronomical twilight altitude, use the minimal altitude
     if (dawn < start_h || dusk < start_h)
     {
-        DawnAstronomicalTwilight = static_cast <double> (min_alt_time) / 2400.0;
-        DuskAstronomicalTwilight = static_cast <double> (min_alt_time) / 2400.0;
+        computedDawn = static_cast <double> (min_alt_time) / 2400.0;
+        computedDusk = static_cast <double> (min_alt_time) / 2400.0;
     }
     // If the Sun did cross the astronomical twilight, use the computed time offsets
     else
     {
-        DawnAstronomicalTwilight = static_cast <double> (dawn) / 2400.0;
-        DuskAstronomicalTwilight = static_cast <double> (dusk) / 2400.0;
+        computedDawn = static_cast <double> (dawn) / 2400.0;
+        computedDusk = static_cast <double> (dusk) / 2400.0;
     }
 
     SunMaxAlt = max_alt;
     SunMinAlt = min_alt;
+
+    return { dawn, dusk };
+}
+
+std::pair<double, double> KSAlmanac::findDawnDusk(Twilight twilight) {
+    switch (twilight) {
+    case Twilight::Nautical:
+        return findDawnDusk(-12.0);
+    case Twilight::Civil:
+        return findDawnDusk(-6.0);
+    default:
+        break;
+    }
+
+    return findDawnDusk(-18.0);
 }
 
 void KSAlmanac::findMoonPhase()
@@ -193,4 +223,34 @@ double KSAlmanac::sunZenithAngleToTime(double z) const
 double KSAlmanac::findAltitude(const SkyPoint *p, double hour)
 {
     return SkyPoint::findAltitude(p, dt, geo, hour).Degrees();
+}
+
+double KSAlmanac::getDuskTwilight(Twilight twilight) const {
+    switch (twilight) {
+    case Twilight::Astronomical:
+        return DuskAstronomicalTwilight;
+    case Twilight::Nautical:
+        return DuskNauticalTwilight;
+    case Twilight::Civil:
+        return DuskCivilTwilight;
+    default:
+        break;
+    }
+
+    return DuskAstronomicalTwilight; 
+}
+
+double KSAlmanac::getDawnTwilight(Twilight twilight) const {
+    switch (twilight) {
+    case Twilight::Astronomical:
+        return DawnAstronomicalTwilight;
+    case Twilight::Nautical:
+        return DawnNauticalTwilight;
+    case Twilight::Civil:
+        return DawnCivilTwilight;
+    default:
+        break;
+    }
+
+    return DawnAstronomicalTwilight; 
 }

@@ -348,14 +348,26 @@ void SchedulerModuleState::calculateDawnDusk(const QDateTime &when, QDateTime &n
             almanacMap[key] = ksal;
         }
 
+        Twilight twilight { Twilight::Astronomical };
+        switch (Options::twilight()) {
+        case 1:
+            twilight = Twilight::Nautical;
+            break;
+        case 2:
+            twilight = Twilight::Civil;
+            break;
+        default:
+            break;
+        }
+
         // If dawn is in the past compared to this observation, fetch the next dawn
         if (dawn <= startup)
-            dawn = getGeo()->UTtoLT(ksal->getDate().addSecs((ksal->getDawnAstronomicalTwilight() * 24.0 + Options::dawnOffset()) *
+            dawn = getGeo()->UTtoLT(ksal->getDate().addSecs((ksal->getDawnTwilight(twilight) * 24.0 + Options::dawnOffset()) *
                                     3600.0));
 
         // If dusk is in the past compared to this observation, fetch the next dusk
         if (dusk <= startup)
-            dusk = getGeo()->UTtoLT(ksal->getDate().addSecs((ksal->getDuskAstronomicalTwilight() * 24.0 + Options::duskOffset()) *
+            dusk = getGeo()->UTtoLT(ksal->getDate().addSecs((ksal->getDuskTwilight(twilight) * 24.0 + Options::duskOffset()) *
                                     3600.0));
 #endif
     }
