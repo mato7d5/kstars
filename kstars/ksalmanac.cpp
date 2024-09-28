@@ -98,7 +98,7 @@ void KSAlmanac::RiseSetTime(SkyObject *o, double *riseTime, double *setTime, QTi
 }
 
 std::pair<double, double> KSAlmanac::findDawnDusk(double altitude)
-{
+{ 
     KStarsDateTime today = dt;
     KSNumbers num(today.djd());
     CachingDms LST = geo->GSTtoLST(today.gst());
@@ -171,7 +171,7 @@ std::pair<double, double> KSAlmanac::findDawnDusk(double altitude)
     SunMaxAlt = max_alt;
     SunMinAlt = min_alt;
 
-    return { dawn, dusk };
+    return { computedDawn, computedDusk };
 }
 
 std::pair<double, double> KSAlmanac::findDawnDusk(Twilight twilight) {
